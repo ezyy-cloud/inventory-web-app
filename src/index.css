@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global transition for smooth dark mode switch */
+html {
+  transition: color-scheme 0.3s ease-in-out;
+}
+
+body {
+  @apply bg-white dark:bg-dark-900 text-gray-900 dark:text-gray-100;
+}
+
+/* Smooth color transitions for interactive elements */
+button, 
+input, 
+select, 
+textarea {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Custom scrollbar for dark mode */
+::-webkit-scrollbar {
+  @apply w-2 bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-dark-600 rounded-full;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-dark-800;
+}
