@@ -32,6 +32,9 @@ export interface Database {
           price: number;
           quantity: number;
           supplier_id: number;
+          category?: string;
+          stock?: number;
+          location_id?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -43,6 +46,9 @@ export interface Database {
           price: number;
           quantity: number;
           supplier_id: number;
+          category?: string;
+          stock?: number;
+          location_id?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -54,6 +60,10 @@ export interface Database {
           price?: number;
           quantity?: number;
           supplier_id?: number;
+          category?: string;
+          stock?: number;
+          location_id?: string;
+          created_at?: string;
           updated_at?: string;
         };
       };
@@ -62,8 +72,8 @@ export interface Database {
           id: number;
           name: string;
           email: string;
-          phone?: string;
-          address?: string;
+          phone: string;
+          address: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -71,8 +81,8 @@ export interface Database {
           id?: number;
           name: string;
           email: string;
-          phone?: string;
-          address?: string;
+          phone: string;
+          address: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -82,6 +92,39 @@ export interface Database {
           email?: string;
           phone?: string;
           address?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      locations: {
+        Row: {
+          id: string;
+          name: string;
+          type: string;
+          address: string;
+          capacity: number;
+          manager: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          type: string;
+          address: string;
+          capacity: number;
+          manager: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          type?: string;
+          address?: string;
+          capacity?: number;
+          manager?: string;
+          created_at?: string;
           updated_at?: string;
         };
       };

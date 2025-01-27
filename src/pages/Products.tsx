@@ -3,25 +3,20 @@ import { Plus, Search, Edit, Trash2 } from 'lucide-react';
 import { Modal } from '../components/Modal';
 import { useProductStore } from '../stores/productStore';
 import { useSupplierStore } from '../stores/supplierStore';
+import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 
-type Product = Database['public']['Tables']['products']['Row'];
-type Supplier = Database['public']['Tables']['suppliers']['Row'];
+type Product = Database['public']['Tables']['products']['Row'] & {
+  category?: string;
+  stock?: number;
+  location_id?: string;
+};
 
-interface Location {
-  id?: number;
-  name: string;
-  type: string;
-  address: string;
-  capacity: number;
-  manager: string;
-}
+type Location = Database['public']['Tables']['locations']['Row'];
 
 export function Products() {
   const { 
     products, 
-    loading: productsLoading, 
-    error: productsError,
     fetchProducts,
     createProduct,
     updateProduct,
@@ -30,8 +25,6 @@ export function Products() {
 
   const {
     suppliers,
-    loading: suppliersLoading,
-    error: suppliersError,
     fetchSuppliers
   } = useSupplierStore();
 
@@ -50,20 +43,33 @@ export function Products() {
   const fetchLocations = async () => {
     const { data, error } = await supabase
       .from('locations')
-      .select('*');
+      .select('*')
+      .order('name');
 
     if (error) {
       console.error('Error fetching locations:', error);
-    } else {
-      setLocations(data || []);
+      return;
     }
+
+    setLocations(data || []);
   };
 
   const handleAddProduct = async () => {
     if (!selectedProduct) return;
 
-    const result = await createProduct(selectedProduct as Database['public']['Tables']['products']['Insert']);
-    if (result) {
+    const success = await createProduct({
+      name: selectedProduct.name || '',
+      description: selectedProduct.description,
+      sku: selectedProduct.sku || '',
+      price: selectedProduct.price || 0,
+      quantity: selectedProduct.quantity || 0,
+      supplier_id: selectedProduct.supplier_id || 0,
+      category: selectedProduct.category,
+      stock: selectedProduct.stock,
+      location_id: selectedProduct.location_id
+    });
+
+    if (success) {
       setIsModalOpen(false);
       setSelectedProduct(null);
     }
@@ -72,29 +78,36 @@ export function Products() {
   const handleUpdateProduct = async () => {
     if (!selectedProduct?.id) return;
 
-    const result = await updateProduct(
-      selectedProduct.id,
-      selectedProduct as Database['public']['Tables']['products']['Update']
-    );
-    if (result) {
+    const success = await updateProduct(selectedProduct.id, {
+      name: selectedProduct.name,
+      description: selectedProduct.description,
+      sku: selectedProduct.sku,
+      price: selectedProduct.price,
+      quantity: selectedProduct.quantity,
+      supplier_id: selectedProduct.supplier_id,
+      category: selectedProduct.category,
+      stock: selectedProduct.stock,
+      location_id: selectedProduct.location_id
+    });
+
+    if (success) {
       setIsModalOpen(false);
       setSelectedProduct(null);
     }
   };
 
   const handleDeleteProduct = async (id: number) => {
-    const confirmed = window.confirm('Are you sure you want to delete this product?');
-    if (!confirmed) return;
-
-    const result = await deleteProduct(id);
-    if (result) {
-      setSelectedProduct(null);
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      const success = await deleteProduct(id);
+      if (success) {
+        setSelectedProduct(null);
+      }
     }
   };
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.sku.toLowerCase().includes(searchTerm.toLowerCase());
+      product.sku.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = !categoryFilter || product.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
@@ -284,7 +297,7 @@ export function Products() {
             <select
               id="location"
               value={selectedProduct?.location_id || ''}
-              onChange={(e) => setSelectedProduct(prev => prev ? {...prev, location_id: Number(e.target.value)} : null)}
+              onChange={(e) => setSelectedProduct(prev => prev ? {...prev, location_id: e.target.value} : null)}
               className="app-select"
             >
               <option value="">Select Location</option>

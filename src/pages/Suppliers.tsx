@@ -7,14 +7,12 @@ import type { Database } from '../lib/database.types';
 type Supplier = Database['public']['Tables']['suppliers']['Row'];
 
 export function Suppliers() {
-  const {
-    suppliers,
-    loading,
-    error,
+  const { 
+    suppliers, 
     fetchSuppliers,
     createSupplier,
     updateSupplier,
-    deleteSupplier
+    deleteSupplier 
   } = useSupplierStore();
 
   const [selectedSupplier, setSelectedSupplier] = useState<Partial<Supplier> | null>(null);
@@ -28,37 +26,41 @@ export function Suppliers() {
   const handleAddSupplier = async () => {
     if (!selectedSupplier) return;
 
-    const result = await createSupplier(selectedSupplier as Database['public']['Tables']['suppliers']['Insert']);
-    if (result) {
-      setIsModalOpen(false);
-      setSelectedSupplier(null);
-    }
+    await createSupplier({
+      name: selectedSupplier.name || '',
+      email: selectedSupplier.email || '',
+      phone: selectedSupplier.phone || '',
+      address: selectedSupplier.address || ''
+    });
+
+    setIsModalOpen(false);
+    setSelectedSupplier(null);
+    await fetchSuppliers();
   };
 
   const handleUpdateSupplier = async () => {
     if (!selectedSupplier?.id) return;
 
-    const result = await updateSupplier(
-      selectedSupplier.id,
-      selectedSupplier as Database['public']['Tables']['suppliers']['Update']
-    );
-    if (result) {
-      setIsModalOpen(false);
-      setSelectedSupplier(null);
-    }
+    await updateSupplier(selectedSupplier.id, {
+      name: selectedSupplier.name,
+      email: selectedSupplier.email,
+      phone: selectedSupplier.phone,
+      address: selectedSupplier.address
+    });
+
+    setIsModalOpen(false);
+    setSelectedSupplier(null);
+    await fetchSuppliers();
   };
 
   const handleDeleteSupplier = async (id: number) => {
-    const confirmed = window.confirm('Are you sure you want to delete this supplier?');
-    if (!confirmed) return;
-
-    const result = await deleteSupplier(id);
-    if (result) {
-      setSelectedSupplier(null);
+    if (window.confirm('Are you sure you want to delete this supplier?')) {
+      await deleteSupplier(id);
+      await fetchSuppliers();
     }
   };
 
-  const filteredSuppliers = suppliers.filter(supplier =>
+  const filteredSuppliers = suppliers.filter(supplier => 
     supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supplier.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -95,10 +97,8 @@ export function Suppliers() {
         />
       </div>
 
-      {loading ? (
-        <div className="text-center text-gray-500 dark:text-gray-400">Loading...</div>
-      ) : error ? (
-        <div className="text-center text-red-500">{error}</div>
+      {suppliers.length === 0 ? (
+        <div className="text-center text-gray-500 dark:text-gray-400">No suppliers found.</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-300 dark:divide-dark-600">

@@ -3,123 +3,85 @@ import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 
 type Supplier = Database['public']['Tables']['suppliers']['Row'];
-type SupplierInsert = Database['public']['Tables']['suppliers']['Insert'];
-type SupplierUpdate = Database['public']['Tables']['suppliers']['Update'];
 
 interface SupplierState {
   suppliers: Supplier[];
   loading: boolean;
   error: string | null;
   fetchSuppliers: () => Promise<void>;
-  createSupplier: (supplier: SupplierInsert) => Promise<boolean>;
-  updateSupplier: (id: number, supplier: SupplierUpdate) => Promise<boolean>;
-  deleteSupplier: (id: number) => Promise<boolean>;
+  createSupplier: (supplier: Omit<Supplier, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  updateSupplier: (id: number, supplier: Partial<Supplier>) => Promise<void>;
+  deleteSupplier: (id: number) => Promise<void>;
 }
 
-export const useSupplierStore = create<SupplierState>((set, get) => ({
+export const useSupplierStore = create<SupplierState>((set) => ({
   suppliers: [],
   loading: false,
   error: null,
-
+  
   fetchSuppliers: async () => {
+    set({ loading: true, error: null });
     try {
-      set({ loading: true, error: null });
-
       const { data, error } = await supabase
         .from('suppliers')
         .select('*')
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        set({ error: error.message, loading: false });
+        return;
+      }
 
       set({ suppliers: data || [], loading: false });
-    } catch (error) {
+    } catch (err) {
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to fetch suppliers',
+        error: err instanceof Error ? err.message : 'An unknown error occurred', 
         loading: false 
       });
-      return false;
     }
   },
 
   createSupplier: async (supplier) => {
     try {
-      set({ loading: true, error: null });
-
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('suppliers')
-        .insert(supplier)
-        .select()
-        .single();
+        .insert(supplier);
 
-      if (error) throw error;
-
-      set(state => ({
-        suppliers: [...state.suppliers, data],
-        loading: false
-      }));
-
-      return true;
-    } catch (error) {
-      set({ 
-        error: error instanceof Error ? error.message : 'Failed to create supplier',
-        loading: false 
-      });
-      return false;
+      if (error) {
+        throw error;
+      }
+    } catch (err) {
+      console.error('Error creating supplier:', err);
     }
   },
 
   updateSupplier: async (id, supplier) => {
     try {
-      set({ loading: true, error: null });
-
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('suppliers')
         .update(supplier)
-        .eq('id', id)
-        .select()
-        .single();
+        .eq('id', id);
 
-      if (error) throw error;
-
-      set(state => ({
-        suppliers: state.suppliers.map(s => s.id === id ? data : s),
-        loading: false
-      }));
-
-      return true;
-    } catch (error) {
-      set({ 
-        error: error instanceof Error ? error.message : 'Failed to update supplier',
-        loading: false 
-      });
-      return false;
+      if (error) {
+        throw error;
+      }
+    } catch (err) {
+      console.error('Error updating supplier:', err);
     }
   },
 
   deleteSupplier: async (id) => {
     try {
-      set({ loading: true, error: null });
-
       const { error } = await supabase
         .from('suppliers')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
-
-      set(state => ({
-        suppliers: state.suppliers.filter(s => s.id !== id),
-        loading: false
-      }));
-
-      return true;
-    } catch (error) {
-      set({ 
-        error: error instanceof Error ? error.message : 'Failed to delete supplier',
-        loading: false 
-      });
-      return false;
+      if (error) {
+        throw error;
+      }
+    } catch (err) {
+      console.error('Error deleting supplier:', err);
     }
   }
 }));
